@@ -211,7 +211,7 @@ export default function RummyScoreboard() {
 
   const formatScoreDisplay = (score: any): string => {
     if (score === "FC" || score === initialPenalties.FULL_COUNT) return "FC";
-    if (score === "MD" || score === initialPenalties.MIDDLE_DROP) return "MD";
+    if (score === "MD" || score === initialPenalties.MIDDLE_DROP) return "MD"; 
     if (score === "D" || score === initialPenalties.OPEN_DROP) return "D";
     if (score === "R" || score === initialPenalties.SHOW) return "R";
     if (typeof score === "number") return score.toString();
