@@ -1,13 +1,26 @@
-import type { ButtonInterface } from "../Interfaces/ButtonInterface";
-
-const defaultStyles = "px-2 py-2 rounded-md font-light bg-blue-600";
-
-const hoverStyle = "cursor-pointer hover:bg-blue-200";
-
-export function Button(props: ButtonInterface){
-    return <button onClick={props.onClick} className={` ${defaultStyles} ${hoverStyle}`}>
-        <div className="flex justify-center">
-        {props.text}
-        </div>
-    </button>
+interface ButtonProps {
+  onClick?: () => void;
+  styles?: string;
+  type?: 'button' | 'submit' | 'reset';
+  title: string;
+  disabled?: boolean;
 }
+
+const Button: React.FC<ButtonProps> = (props) => {
+
+    const defaultStyles = "px-4 py-2 font-light rounded rounded-md text-white font-light bg-blue-600";
+
+    return (
+        <button
+        onClick={props.onClick}
+        className={defaultStyles + props.styles}
+        type={props.type}
+        title={props.title}
+        disabled={props.disabled}
+        >
+        {props.title}
+        </button>
+    );
+};
+
+export default Button;
