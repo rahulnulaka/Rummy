@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import Button from "../Components/Button";
 
 type Player = {
   id: number;
@@ -13,11 +14,11 @@ export default function RummyScoreboard() {
   const [round, setRound] = useState(0);
   const [dealerId, setDealerId] = useState<number | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
-
+  
 
   const penalties = {
     FULL_COUNT: "FC",
-    MIDDLE_DROP: "MB",
+    MIDDLE_DROP: "MD", 
     OPEN_DROP: "D",
     SHOW: "R",
   };
@@ -63,7 +64,12 @@ export default function RummyScoreboard() {
     localStorage.setItem("rummyState", JSON.stringify(stateToSave));
   }, [players, round, dealerId, initialPenalties, winner]);
 
-  const addPlayer = () => {
+  const addPlayer = (name?:any) => {
+    // console.log(playerName);
+    if(playerName === "") {
+      setPlayerName(name);
+      console.log(playerName);
+    };
     if (!playerName.trim()) return;
     const newPlayer: Player = {
       id: Date.now(),
@@ -72,7 +78,7 @@ export default function RummyScoreboard() {
       scores: [],
     };
     setPlayers((prevPlayers) => {
-      const updatedPlayers = [...prevPlayers, newPlayer];
+    const  updatedPlayers = [...prevPlayers, newPlayer];
       if (updatedPlayers.length === 1) {
         setDealerId(newPlayer.id); // First player is dealer
       }
@@ -80,6 +86,8 @@ export default function RummyScoreboard() {
     });
     setPlayerName("");
   };
+
+  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
 
   const removePlayer = (id: number) => {
     setPlayers((prev) =>
@@ -106,6 +114,17 @@ export default function RummyScoreboard() {
       })
     );
   };
+
+  const deletePlayer = (id:number) =>{
+    const newArray:Player[]=[]
+    players.map((value)=>{
+      if(value.id!==id){ 
+        newArray.push(value);
+      }
+    })
+    setPlayers(newArray);
+    setDealerId(newArray[0].id);
+  }
 
   const startEditingScore = (playerId: number, roundIndex: number) => {
     const currentScore = players.find((p) => p.id === playerId)?.scores[roundIndex] ?? "";
@@ -134,7 +153,7 @@ export default function RummyScoreboard() {
     return player.scores
       .map((score) => {
         if (score === "FC") return initialPenalties.FULL_COUNT;
-        if (score === "MB") return initialPenalties.MIDDLE_DROP;
+        if (score === "MD") return initialPenalties.MIDDLE_DROP;
         if (score === "D") return initialPenalties.OPEN_DROP;
         if (score === "R") return initialPenalties.SHOW;
         const parsed = parseInt(score);
@@ -210,22 +229,44 @@ export default function RummyScoreboard() {
           placeholder="Enter player name"
           className="border p-2 mr-2"
         />
-        <button
-          onClick={addPlayer}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Add Player
-        </button>
+        <Button title={"Add Player"} onClick={addPlayer} styles={"bg-blue-500"} />
       </div>
+      {(round<1) && 
+      <div>
+        {defaultnames.map((value,index)=>(
+          <Button 
+            key={index} 
+            styles={"m-1 py-0 px-4 text-black text-sm font-medium bg-gray-400 border border-black rounded rounded-md"} 
+            title={value}
+            disabled={round>1}
+            onClick={()=>{
+              const newPlayer: Player = {
+                id: Date.now(),
+                name: value.trim(),
+                isActive: true,
+                scores: [],
+              }
+              setPlayers((prevPlayers) => {
+                const updatedPlayers = [...prevPlayers, newPlayer];
+                 if (updatedPlayers.length === 1) {
+                   setDealerId(newPlayer.id); // First player is dealer
+                 }
+                 return updatedPlayers;
+               });
+            }} 
+          />
+        ))}
+      </div>}
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-2">Scoring Settings</h2>
         <div className="flex gap-4 flex-wrap">
           {["FULL_COUNT", "MIDDLE_DROP", "OPEN_DROP", "SHOW", "GAME_SCORE"].map((key) => (
-            <label key={key}>
+            <label key={key} >
               {key.replace("_", " ")}:
               <input
-                type="number"
+                disabled={round>0}
+                type="text"
                 value={(initialPenalties as any)[key]}
                 onChange={(e) =>
                   setInitialPenalties({
@@ -309,6 +350,7 @@ export default function RummyScoreboard() {
             <button onClick={() => addScore(player.id, "MIDDLE_DROP")} className="bg-orange-400 px-3 py-1 rounded">Middle</button>
             <button onClick={() => addScore(player.id, "OPEN_DROP")} className="bg-yellow-400 px-3 py-1 rounded">Open</button>
             <button onClick={() => addScore(player.id, "SHOW")} className="bg-green-400 px-3 py-1 rounded">Show</button>
+            <button hidden={round>0} onClick={() => deletePlayer(player.id)} className="bg-green-400 px-3 py-1 rounded">Delete</button>
           </div>
         ))}
         {winner && (
@@ -316,13 +358,13 @@ export default function RummyScoreboard() {
     🎉 Winner: {winner} 🎉
   </div>
 )}
-        <button
-  onClick={nextRound}
-  className="mt-4 bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"
-  disabled={!!winner}
->
-  Next Round
-</button>
+        
+    <Button 
+      onClick={nextRound} 
+      title={"Next Round"} 
+      styles={"mt-4 bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"}
+      disabled={(round==0) || !!winner}
+    />
       </div>
 
       <button onClick={startNewGame} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">Start New Game</button>
