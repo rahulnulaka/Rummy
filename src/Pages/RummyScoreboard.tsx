@@ -1,4 +1,3 @@
-//hello world
 import { useState, useEffect } from "react";
 import Button from "../Components/Button";
 
