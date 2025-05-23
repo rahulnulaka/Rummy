@@ -103,6 +103,7 @@ export default function RummyScoreboard() {
 
   const addScore = (id: number, penaltyKey: keyof typeof penalties) => {
     const penaltySymbol = penalties[penaltyKey];
+    console.log(penaltySymbol);
     setPlayers((prev) =>
       prev.map((p) => {
         if (p.id === id) {
@@ -210,7 +211,7 @@ export default function RummyScoreboard() {
 
   const formatScoreDisplay = (score: any): string => {
     if (score === "FC" || score === initialPenalties.FULL_COUNT) return "FC";
-    if (score === "MB" || score === initialPenalties.MIDDLE_DROP) return "MB";
+    if (score === "MD" || score === initialPenalties.MIDDLE_DROP) return "MD";
     if (score === "D" || score === initialPenalties.OPEN_DROP) return "D";
     if (score === "R" || score === initialPenalties.SHOW) return "R";
     if (typeof score === "number") return score.toString();
@@ -229,7 +230,7 @@ export default function RummyScoreboard() {
           placeholder="Enter player name"
           className="border p-2 mr-2"
         />
-        <Button title={"Add Player"} onClick={addPlayer} styles={"bg-blue-500"} />
+        <Button title={"Add Player"} onClick={addPlayer} styles={"bg-blue-500 px-4 py-2 font-light rounded-md text-white"} />
       </div>
       {(round<1) && 
       <div>
