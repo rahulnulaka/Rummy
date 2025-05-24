@@ -14,7 +14,7 @@ export default function RummyScoreboard() {
   const [round, setRound] = useState(0);
   const [dealerId, setDealerId] = useState<number | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
-  
+  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
 
   const penalties = {
     FULL_COUNT: "FC",
@@ -87,7 +87,7 @@ export default function RummyScoreboard() {
     setPlayerName("");
   };
 
-  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
+  
 
   const removePlayer = (id: number) => {
     setPlayers((prev) =>
