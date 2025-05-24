@@ -9,6 +9,7 @@ type Player = {
 };
 
 export default function RummyScoreboard() {
+  const [gameId, setGameId] = useState(0)
   const [players, setPlayers] = useState<Player[]>([]);
   const [playerName, setPlayerName] = useState("");
   const [round, setRound] = useState(0);
@@ -16,6 +17,7 @@ export default function RummyScoreboard() {
   const [winner, setWinner] = useState<string | null>(null);
   const [editingScore, setEditingScore] = useState<{ playerId: number; roundIndex: number } | null>(null);
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
+  const [shufflePlayers, setShufflePlayers] = useState(true);
   const [initialPenalties, setInitialPenalties] = useState({
                                                             FULL_COUNT: 80,
                                                             MIDDLE_DROP: 40,
@@ -30,6 +32,10 @@ export default function RummyScoreboard() {
     OPEN_DROP: "D",
     SHOW: "R",
   };
+
+  useEffect(()=>{
+    gameCode();
+  },[])
 
   useEffect(() => {
     const activePlayers = players.filter((p) => p.isActive);
@@ -52,13 +58,14 @@ export default function RummyScoreboard() {
       setDealerId(parsedState.dealerId || null);
       setInitialPenalties(parsedState.initialPenalties || initialPenalties);
       setWinner(parsedState.winner || winner);
+      setShufflePlayers(parsedState.shufflePlayers || false);
     }
   }, []);
 
   useEffect(() => {
-    const stateToSave = { players, round, dealerId, initialPenalties, winner };
+    const stateToSave = { players, round, dealerId, initialPenalties, winner, shufflePlayers };
     localStorage.setItem("rummyState", JSON.stringify(stateToSave));
-  }, [players, round, dealerId, initialPenalties, winner]);
+  }, [players, round, dealerId, initialPenalties, winner, shufflePlayers]);
 
   const addPlayer = (name?:any) => {
     // console.log(playerName);
@@ -85,7 +92,7 @@ export default function RummyScoreboard() {
 
   const gameCode = ()=>{
     const code = Math.floor(Math.random()*1000000);
-    return code;
+    setGameId(code);
   }
 
   const arrangePlayer = () =>{
@@ -102,9 +109,10 @@ export default function RummyScoreboard() {
     })
     setPlayers(orderArray);
     setDealerId(orderArray[0].id);
+    setShufflePlayers((prev)=>!prev);
   }
 
-  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
+  const defaultnames:Array<string>=["🙈Macharshan", "💀Krishna", "🦋Rahul", "🕊Krish"];
 
   const removePlayer = (id: number) => {
     setPlayers((prev) =>
@@ -223,6 +231,8 @@ export default function RummyScoreboard() {
     });
     localStorage.removeItem("rummyState");
     setWinner(null);
+    setShufflePlayers(true);
+    gameCode();
   };
 
   const formatScoreDisplay = (score: any): string => {
@@ -235,179 +245,218 @@ export default function RummyScoreboard() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto font-sans">
-      <h1 className="text-3xl font-bold mb-4">Rummy Scoreboard</h1>
-      <h2 className="m-4">Game Code : {gameCode()}</h2>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto font-sans text-white">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6">
+        {/* Left Side - Inputs */}
+        <div className="w-full md:w-1/2">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Rummy Scoreboard</h1>
+          <h2 className="text-md sm:text-lg mb-4">Game Code : {gameId}</h2>
 
-      <div className="mb-4">
-        <input
-          type="text"
-          value={playerName}
-          onChange={(e) => setPlayerName(e.target.value)}
-          placeholder="Enter player name"
-          className="border p-2 mr-2"
-        />
-        <Button title={"Add Player"} onClick={addPlayer} styles={"bg-blue-500 px-4 py-2 font-light rounded-md text-white"} />
-      </div>
-      {(round<1) && 
-      <div>
-        {defaultnames.map((value,index)=>(
-          <Button 
-            key={index} 
-            styles={"m-1 py-0 px-4 text-black text-sm font-medium bg-gray-400 border border-black rounded rounded-md"} 
-            title={value}
-            disabled={round>1}
-            onClick={()=>{
-              const newPlayer: Player = {
-                id: Date.now(),
-                name: value.trim(),
-                isActive: true,
-                scores: [],
-              }
-              setPlayers((prevPlayers) => {
-                const updatedPlayers = [...prevPlayers, newPlayer];
-                 if (updatedPlayers.length === 1) {
-                   setDealerId(newPlayer.id); // First player is dealer
-                 }
-                 return updatedPlayers;
-               });
-            }} 
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="Enter player name"
+              className="text-black border p-2 w-full sm:w-auto"
+            />
+            <Button
+              title="Add Player"
+              onClick={addPlayer}
+              styles="bg-blue-500 px-4 py-2 font-light rounded-md text-white w-full sm:w-auto"
+            />
+          </div>
+
+          {shufflePlayers && (
+            <div className="flex flex-wrap gap-2">
+              {defaultnames.map((name, idx) => (
+                <Button
+                  key={idx}
+                  styles="px-4 py-1 text-sm font-medium text-black bg-cyan-700 border border-black rounded"
+                  title={name}
+                  disabled={round > 1}
+                  onClick={() => {
+                    const newPlayer: Player = {
+                      id: Date.now(),
+                      name: name.trim(),
+                      isActive: true,
+                      scores: [],
+                    };
+                    setPlayers((prevPlayers) => {
+                      const updated = [...prevPlayers, newPlayer];
+                      if (updated.length === 1) setDealerId(newPlayer.id);
+                      return updated;
+                    });
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right Side - Image */}
+        <div className="w-full md:w-1/2 flex justify-center">
+          <img
+            src="https://r4.wallpaperflare.com/wallpaper/901/920/998/poker-cards-card-death-wallpaper-0900684d117a1d0bc627484f10c1667d.jpg"
+            alt="rummy card"
+            className="h-48 sm:h-52 w-full object-cover rounded"
           />
-        ))}
-      </div>}
-
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Scoring Settings</h2>
-        <div className="flex gap-4 flex-wrap">
-          {["FULL_COUNT", "MIDDLE_DROP", "OPEN_DROP", "SHOW", "GAME_SCORE"].map((key) => {
-            return(
-              <>
-                <label htmlFor={key}>{key.replace("_", " ")}: </label>
-                <input id={key}
-                    disabled={round>0}
-                    type="text"
-                    value={(initialPenalties as any)[key]}
-                    onChange={(e) =>
-                      setInitialPenalties({
-                        ...initialPenalties,
-                        [key]: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    className="border px-2 py-1 mx-2 w-24"
-                  />  
-              </>
-            )
-          })}
         </div>
       </div>
 
-      <div>
-        {players.map((player,index)=>{
-          return(
-            <Button 
-              key={index} 
-              styles={"m-2 py-0 px-4 text-black text-sm font-medium bg-gray-400 border border-black rounded rounded-md"} 
-              title={player.name}
-              disabled 
-            />
-          )
-        })}
-        <Button
-          title="arrange"
-          onClick={arrangePlayer}
-        />
+      {/* Penalty Settings */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Scoring Settings</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:flex gap-4 flex-wrap">
+          {["FULL_COUNT", "MIDDLE_DROP", "OPEN_DROP", "SHOW", "GAME_SCORE"].map((key) => (
+            <div key={key} className="flex items-center space-x-2">
+              <label htmlFor={key} className="text-sm">{key.replace("_", " ")}:</label>
+              <input
+                id={key}
+                disabled={round > 0}
+                type="text"
+                value={(initialPenalties as any)[key]}
+                onChange={(e) =>
+                  setInitialPenalties({
+                    ...initialPenalties,
+                    [key]: parseInt(e.target.value) || 0,
+                  })
+                }
+                className="w-14 text-black bg-gray-300 text-center border border-black rounded"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <table className="w-full border-collapse border mb-8 text-center">
-        <thead>
-          <tr>
-            <th className="border px-4 py-2 bg-yellow-400">Round</th>
-            {players.map((player) => (
-              <th
-                key={player.id}
-                className={`border px-4 py-2 ${
-                  calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 20 ? "bg-red-300" : "bg-blue-400"
-                }`}
-              >
-                {player.id === dealerId ? `${player.name} *` : player.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {[...Array(round + 1).keys()].map((r) => (
-            <tr key={r}>
-              <td className="border px-4 py-2 bg-green-300">Round {r + 1}</td>
-              {players.map((player) => (
-                <td
-                  key={player.id}
-                  className={`border px-4 py-2 cursor-pointer ${
-                    player.isActive ? "hover:bg-yellow-100" : "bg-gray-300"
-                  }`}
-                  onClick={() => player.isActive && startEditingScore(player.id, r)}
-                >
-                  {editingScore?.playerId === player.id && editingScore.roundIndex === r ? (
-                    <input
-                      type="number"
-                      value={selectedScore !== null ? selectedScore : ""}
-                      onChange={(e) => setSelectedScore(parseInt(e.target.value))}
-                      onBlur={saveScore}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveScore();
-                        if (e.key === "Escape") setEditingScore(null);
-                      }}
-                      autoFocus
-                      className="border px-2 py-1 w-20 text-center"
-                      placeholder="Score"
-                    />
-                  ) : (
-                    formatScoreDisplay(player.scores[r])
-                  )}
-                </td>
-              ))}
-            </tr>
+      {/* Player List */}
+      {shufflePlayers && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {players.map((player) => (
+            <Button
+              key={player.id}
+              styles="py-1 px-4 text-black text-sm font-medium bg-gray-400 border border-black rounded"
+              title={player.name}
+              disabled
+            />
           ))}
-          <tr>
-            <td className="border px-4 py-2 font-bold bg-indigo-600 text-white">Total</td>
-            {players.map((player) => (
-              <td key={player.id} className="border px-4 py-2 font-bold bg-indigo-500 text-white">
-                {calculateTotalScore(player)}
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
+          {players.length > 0 && (
+            <Button title="Shuffle" onClick={arrangePlayer} />
+          )}
+        </div>
+      )}
 
+      {/* Score Table */}
+      {!shufflePlayers && (
+        <div className="overflow-x-auto mb-6">
+          <table className="min-w-[600px] border-collapse border text-center">
+            <thead>
+              <tr>
+                <th className="border px-4 py-2 bg-red-500 text-white">Round</th>
+                {players.map((player) => (
+                  <th
+                    key={player.id}
+                    className={`border px-4 py-2 ${
+                      calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 20
+                        ? "bg-red-300"
+                        : "bg-blue-400"
+                    }`}
+                  >
+                    {player.id === dealerId ? `${player.name} *` : player.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(round + 1).keys()].map((r) => (
+                <tr key={r}>
+                  <td className="border px-4 py-2 bg-red-500 text-white">Round {r + 1}</td>
+                  {players.map((player) => (
+                    <td
+                      key={player.id}
+                      className={`border px-2 py-1 text-sm cursor-pointer ${
+                        player.isActive ? "hover:bg-neutral-700" : "bg-gray-300"
+                      }`}
+                      onClick={() => player.isActive && startEditingScore(player.id, r)}
+                    >
+                      {editingScore?.playerId === player.id && editingScore.roundIndex === r ? (
+                        <input
+                          type="number"
+                          value={selectedScore !== null ? selectedScore : ""}
+                          onChange={(e) => setSelectedScore(parseInt(e.target.value))}
+                          onBlur={saveScore}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveScore();
+                            if (e.key === "Escape") setEditingScore(null);
+                          }}
+                          autoFocus
+                          className="border px-2 py-1 w-full max-w-[80px] text-center text-black"
+                        />
+                      ) : (
+                        formatScoreDisplay(player.scores[r])
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr>
+                <td className="border px-4 py-2 font-bold bg-indigo-600 text-white">Total</td>
+                {players.map((player) => (
+                  <td key={player.id} className="border px-4 py-2 font-bold bg-indigo-500 text-white">
+                    {calculateTotalScore(player)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Score Entry Buttons */}
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-2">Enter Scores for Round {round + 1}</h2>
+        <div className="space-y-2">
           {players.filter((p) => p.isActive).map((player) => (
-              <div key={player.id} className="mb-2 flex gap-2 items-center">
-                <button hidden={round>0} onClick={() => deletePlayer(player.id)} className="bg-green-400 px-3 py-1 rounded">Delete</button>
-                <span className="w-32 font-medium">{player.name}</span>
+            <div key={player.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <button
+                hidden={round > 0}
+                onClick={() => deletePlayer(player.id)}
+                className="bg-transparent px-2 py-1"
+              >
+                🗑
+              </button>
+              <span className="w-32 font-medium">{player.name}</span>
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => addScore(player.id, "FULL_COUNT")} className="bg-red-400 text-white px-3 py-1 rounded">Full</button>
                 <button onClick={() => addScore(player.id, "MIDDLE_DROP")} className="bg-orange-400 px-3 py-1 rounded">Middle</button>
                 <button onClick={() => addScore(player.id, "OPEN_DROP")} className="bg-yellow-400 px-3 py-1 rounded">Open</button>
                 <button onClick={() => addScore(player.id, "SHOW")} className="bg-green-400 px-3 py-1 rounded">Show</button>
               </div>
-            ))}
-            {winner && (
-              <div className="text-2xl font-bold text-green-600 mb-4">
-                🎉 Winner: {winner} 🎉
-              </div>
-            )}
+            </div>
+          ))}
         </div>
-      <div>
-        <Button 
-        onClick={nextRound} 
-        title={"Next Round"} 
-        styles={"mt-4 bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"}
-        disabled={(round==0) || !!winner}
-        />
 
+        {/* Winner Message */}
+        {winner && (
+          <div className="text-center mt-4 text-xl sm:text-2xl font-bold text-green-500">
+            🎉 Winner: {winner} 🎉
+          </div>
+        )}
+      </div>
+
+      {/* Control Buttons */}
+      <div className="mt-6 flex flex-col sm:flex-row gap-4">
         <Button
-        title={"New Game" }
-        onClick={startNewGame}
-        styles={"m-4 bg-red-500 text-white px-4 py-2 rounded"}
+          onClick={nextRound}
+          title="Next Round"
+          styles="bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"
+          disabled={round === 0 || !!winner}
+        />
+        <Button
+          title="New Game"
+          onClick={startNewGame}
+          styles="bg-red-500 text-white px-4 py-2 rounded"
         />
       </div>
     </div>
