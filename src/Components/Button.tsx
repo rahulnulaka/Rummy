@@ -8,12 +8,12 @@ interface ButtonProps {
 
 const Button: React.FC<ButtonProps> = (props) => {
 
-    // const defaultStyles = "px-4 py-2 font-light rounded rounded-md text-white font-light bg-blue-600";
+    const defaultStyles = "px-4 py-2 font-light rounded rounded-md text-white font-light bg-blue-600";
 
     return (
         <button
         onClick={props.onClick}
-        className={props.styles}
+        className={`${defaultStyles} ${props.styles}`}
         type={props.type}
         title={props.title}
         disabled={props.disabled}
