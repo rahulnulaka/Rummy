@@ -14,7 +14,15 @@ export default function RummyScoreboard() {
   const [round, setRound] = useState(0);
   const [dealerId, setDealerId] = useState<number | null>(null);
   const [winner, setWinner] = useState<string | null>(null);
-  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
+  const [editingScore, setEditingScore] = useState<{ playerId: number; roundIndex: number } | null>(null);
+  const [selectedScore, setSelectedScore] = useState<number | null>(null);
+  const [initialPenalties, setInitialPenalties] = useState({
+                                                            FULL_COUNT: 80,
+                                                            MIDDLE_DROP: 40,
+                                                            OPEN_DROP: 20,
+                                                            SHOW: 0,
+                                                            GAME_SCORE: 201,
+                                                          });
 
   const penalties = {
     FULL_COUNT: "FC",
@@ -23,29 +31,17 @@ export default function RummyScoreboard() {
     SHOW: "R",
   };
 
-  const [initialPenalties, setInitialPenalties] = useState({
-    FULL_COUNT: 80,
-    MIDDLE_DROP: 40,
-    OPEN_DROP: 20,
-    SHOW: 0,
-    GAME_SCORE: 201,
-  });
-
-  const [editingScore, setEditingScore] = useState<{ playerId: number; roundIndex: number } | null>(null);
-  const [selectedScore, setSelectedScore] = useState<number | null>(null);
-
   useEffect(() => {
-  const activePlayers = players.filter((p) => p.isActive);
+    const activePlayers = players.filter((p) => p.isActive);
 
-  const allScored = activePlayers.every(
-    (player) => player.scores[round] !== undefined && player.scores[round] !== null
-  );
+    const allScored = activePlayers.every(
+      (player) => player.scores[round] !== undefined && player.scores[round] !== null
+    );
 
-  if (activePlayers.length > 0 && allScored && !winner) {
-    nextRound();
-  }
-}, [players, round, winner]);
-
+    if (activePlayers.length > 0 && allScored && !winner) {
+      nextRound();
+    }
+  }, [players, round, winner]);
 
   useEffect(() => {
     const savedState = localStorage.getItem("rummyState");
@@ -87,7 +83,28 @@ export default function RummyScoreboard() {
     setPlayerName("");
   };
 
-  
+  const gameCode = ()=>{
+    const code = Math.floor(Math.random()*1000000);
+    return code;
+  }
+
+  const arrangePlayer = () =>{
+    const set = new Set<number>();
+    const orderArray:Player[]=[];
+    while (set.size < players.length) {
+      set.add(Math.floor(Math.random() * players.length));
+    }
+    const order=Array.from(set);
+    order.map((ordernumber)=>{
+      players.map((player,index)=>{
+        if(index==ordernumber) orderArray.push(player);
+      })
+    })
+    setPlayers(orderArray);
+    setDealerId(orderArray[0].id);
+  }
+
+  const defaultnames:Array<string>=["🙈harsha", "💀krishna", "🦋rahul", "🕊krish"];
 
   const removePlayer = (id: number) => {
     setPlayers((prev) =>
@@ -164,21 +181,20 @@ export default function RummyScoreboard() {
   };
 
   const eliminatePlayerIfReachedScore = () => {
-  setPlayers((prev) => {
-    const updated = prev.map((p) => {
-      const total = calculateTotalScore(p);
-      return total >= initialPenalties.GAME_SCORE ? { ...p, isActive: false } : p;
+    setPlayers((prev) => {
+      const updated = prev.map((p) => {
+        const total = calculateTotalScore(p);
+        return total >= initialPenalties.GAME_SCORE ? { ...p, isActive: false } : p;
+      });
+
+      const active = updated.filter((p) => p.isActive);
+      if (active.length === 1) {
+        setWinner(active[0].name);
+      }
+
+      return updated;
     });
-
-    const active = updated.filter((p) => p.isActive);
-    if (active.length === 1) {
-      setWinner(active[0].name);
-    }
-
-    return updated;
-  });
-};
-
+  };
 
   const nextRound = () => {
     eliminatePlayerIfReachedScore();
@@ -221,6 +237,7 @@ export default function RummyScoreboard() {
   return (
     <div className="p-6 max-w-4xl mx-auto font-sans">
       <h1 className="text-3xl font-bold mb-4">Rummy Scoreboard</h1>
+      <h2 className="m-4">Game Code : {gameCode()}</h2>
 
       <div className="mb-4">
         <input
@@ -262,24 +279,43 @@ export default function RummyScoreboard() {
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-2">Scoring Settings</h2>
         <div className="flex gap-4 flex-wrap">
-          {["FULL_COUNT", "MIDDLE_DROP", "OPEN_DROP", "SHOW", "GAME_SCORE"].map((key) => (
-            <label key={key} >
-              {key.replace("_", " ")}:
-              <input
-                disabled={round>0}
-                type="text"
-                value={(initialPenalties as any)[key]}
-                onChange={(e) =>
-                  setInitialPenalties({
-                    ...initialPenalties,
-                    [key]: parseInt(e.target.value) || 0,
-                  })
-                }
-                className="border px-2 py-1 mx-2 w-24"
-              />
-            </label>
-          ))}
+          {["FULL_COUNT", "MIDDLE_DROP", "OPEN_DROP", "SHOW", "GAME_SCORE"].map((key) => {
+            return(
+              <>
+                <label htmlFor={key}>{key.replace("_", " ")}: </label>
+                <input id={key}
+                    disabled={round>0}
+                    type="text"
+                    value={(initialPenalties as any)[key]}
+                    onChange={(e) =>
+                      setInitialPenalties({
+                        ...initialPenalties,
+                        [key]: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="border px-2 py-1 mx-2 w-24"
+                  />  
+              </>
+            )
+          })}
         </div>
+      </div>
+
+      <div>
+        {players.map((player,index)=>{
+          return(
+            <Button 
+              key={index} 
+              styles={"m-2 py-0 px-4 text-black text-sm font-medium bg-gray-400 border border-black rounded rounded-md"} 
+              title={player.name}
+              disabled 
+            />
+          )
+        })}
+        <Button
+          title="arrange"
+          onClick={arrangePlayer}
+        />
       </div>
 
       <table className="w-full border-collapse border mb-8 text-center">
@@ -344,31 +380,36 @@ export default function RummyScoreboard() {
 
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-2">Enter Scores for Round {round + 1}</h2>
-        {players.filter((p) => p.isActive).map((player) => (
-          <div key={player.id} className="mb-2 flex gap-2 items-center">
-            <span className="w-32 font-medium">{player.name}</span>
-            <button onClick={() => addScore(player.id, "FULL_COUNT")} className="bg-red-400 text-white px-3 py-1 rounded">Full</button>
-            <button onClick={() => addScore(player.id, "MIDDLE_DROP")} className="bg-orange-400 px-3 py-1 rounded">Middle</button>
-            <button onClick={() => addScore(player.id, "OPEN_DROP")} className="bg-yellow-400 px-3 py-1 rounded">Open</button>
-            <button onClick={() => addScore(player.id, "SHOW")} className="bg-green-400 px-3 py-1 rounded">Show</button>
-            <button hidden={round>0} onClick={() => deletePlayer(player.id)} className="bg-green-400 px-3 py-1 rounded">Delete</button>
-          </div>
-        ))}
-        {winner && (
-  <div className="text-2xl font-bold text-green-600 mb-4">
-    🎉 Winner: {winner} 🎉
-  </div>
-)}
-        
-    <Button 
-      onClick={nextRound} 
-      title={"Next Round"} 
-      styles={"mt-4 bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"}
-      disabled={(round==0) || !!winner}
-    />
-      </div>
+          {players.filter((p) => p.isActive).map((player) => (
+              <div key={player.id} className="mb-2 flex gap-2 items-center">
+                <button hidden={round>0} onClick={() => deletePlayer(player.id)} className="bg-green-400 px-3 py-1 rounded">Delete</button>
+                <span className="w-32 font-medium">{player.name}</span>
+                <button onClick={() => addScore(player.id, "FULL_COUNT")} className="bg-red-400 text-white px-3 py-1 rounded">Full</button>
+                <button onClick={() => addScore(player.id, "MIDDLE_DROP")} className="bg-orange-400 px-3 py-1 rounded">Middle</button>
+                <button onClick={() => addScore(player.id, "OPEN_DROP")} className="bg-yellow-400 px-3 py-1 rounded">Open</button>
+                <button onClick={() => addScore(player.id, "SHOW")} className="bg-green-400 px-3 py-1 rounded">Show</button>
+              </div>
+            ))}
+            {winner && (
+              <div className="text-2xl font-bold text-green-600 mb-4">
+                🎉 Winner: {winner} 🎉
+              </div>
+            )}
+        </div>
+      <div>
+        <Button 
+        onClick={nextRound} 
+        title={"Next Round"} 
+        styles={"mt-4 bg-blue-700 text-white px-4 py-2 rounded disabled:bg-gray-400"}
+        disabled={(round==0) || !!winner}
+        />
 
-      <button onClick={startNewGame} className="mt-4 bg-red-500 text-white px-4 py-2 rounded">Start New Game</button>
+        <Button
+        title={"New Game" }
+        onClick={startNewGame}
+        styles={"m-4 bg-red-500 text-white px-4 py-2 rounded"}
+        />
+      </div>
     </div>
   );
 }
