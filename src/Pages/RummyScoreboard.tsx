@@ -80,13 +80,7 @@ export default function RummyScoreboard() {
       isActive: true,
       scores: [],
     };
-    setPlayers((prevPlayers) => {
-    const  updatedPlayers = [...prevPlayers, newPlayer];
-      if (updatedPlayers.length === 1) {
-        setDealerId(newPlayer.id); // First player is dealer
-      }
-      return updatedPlayers;
-    });
+    setPlayers((prevPlayers) => [...prevPlayers, newPlayer] );
     setPlayerName("");
   };
 
@@ -114,17 +108,11 @@ export default function RummyScoreboard() {
 
   const defaultnames:Array<string>=["🙈Macharshan", "💀Krishna", "🦋Rahul", "🕊Krish"];
 
-  const removePlayer = (id: number) => {
-    setPlayers((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isActive: false } : p))
-    );
-  };
-
-  const rejoinPlayer = (id: number) => {
-    setPlayers((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, isActive: true } : p))
-    );
-  };
+  // const rejoinPlayer = (id: number) => {
+  //   setPlayers((prev) =>
+  //     prev.map((p) => (p.id === id ? { ...p, isActive: true } : p))
+  //   );
+  // };
 
   const addScore = (id: number, penaltyKey: keyof typeof penalties) => {
     const penaltySymbol = penalties[penaltyKey];
@@ -189,27 +177,29 @@ export default function RummyScoreboard() {
   };
 
   const eliminatePlayerIfReachedScore = () => {
-    let activePlayers:Player[] = [];
-    players.map((p)=>{
-      let total = calculateTotalScore(p);
-      console.log("total:" , total);
-      if(total >= initialPenalties.GAME_SCORE){
-        p.isActive = false;
-      }
-       activePlayers.push(p);
+    players.map((player)=>{
+        const total = calculateTotalScore(player);
+        if(total >= initialPenalties.GAME_SCORE) {
+          player.isActive = false;
+        } else {
+          player;
+        }
     })
-    setPlayers(activePlayers);
+    const active = players.filter((p) => p.isActive);
+    if (active.length === 1) {
+      setWinner(active[0].name);
+    }
   };
 
   const nextRound = () => {
     eliminatePlayerIfReachedScore();
 
-    const activePlayers = players.filter((p) => p.isActive);
+    const activePlayers = players.filter((player) => player.isActive);
     if (activePlayers.length === 0) return;
 
     let currentIndex = activePlayers.findIndex((p) => p.id === dealerId);
     console.log(currentIndex);
-    // if (currentIndex === -1) currentIndex = 0;
+    if (currentIndex === -1) currentIndex = 0;
 
     const nextDealer = activePlayers[(currentIndex + 1) % activePlayers.length];
     setDealerId(nextDealer.id);
@@ -348,18 +338,19 @@ export default function RummyScoreboard() {
       {/* Score Table */}
       {!shufflePlayers && (
         <div className="overflow-x-auto mb-6">
-          <table className="min-w-[600px] border-collapse border text-center">
+          <table className="min-w-[600px] border-collapse border border-3 table-cell border-black text-center rounded">
+            <caption className="text-xl font-semibold mb-2">Enter Scores for Round {round + 1}</caption>
             <thead>
               <tr>
-                <th className="border px-4 py-2 bg-red-500 text-white">Round</th>
                 {players.map((player) => (
                   <th
                     key={player.id}
-                    className={`border px-4 py-2 ${
-                      calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 20
-                        ? "bg-red-300"
-                        : "bg-blue-400"
-                    }`}
+                    className={`bg-black border border-black px-1 m-0 max-w-fit overflow-x-auto 
+                      ${!player.isActive ? "text-neutral-500" 
+                        :((calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 20)? "text-red-600"
+                        :((calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 40)? "text-yellow-500"
+                        :"text-white"))}
+                      `}
                   >
                     {player.id === dealerId ? `${player.name} *` : player.name}
                   </th>
@@ -369,13 +360,10 @@ export default function RummyScoreboard() {
             <tbody>
               {[...Array(round + 1).keys()].map((r) => (
                 <tr key={r}>
-                  <td className="border px-4 py-2 bg-red-500 text-white">Round {r + 1}</td>
                   {players.map((player) => (
                     <td
                       key={player.id}
-                      className={`border px-2 py-1 text-sm cursor-pointer ${
-                        player.isActive ? "hover:bg-neutral-700" : "bg-gray-300"
-                      }`}
+                      className={`m-1 max-w-fit py-2 bg-blue-500 border border-3 border-black border-r-2 text-sm cursor-pointer `}
                       onClick={() => player.isActive && startEditingScore(player.id, r)}
                     >
                       {editingScore?.playerId === player.id && editingScore.roundIndex === r ? (
@@ -399,9 +387,14 @@ export default function RummyScoreboard() {
                 </tr>
               ))}
               <tr>
-                <td className="border px-4 py-2 font-bold bg-indigo-600 text-white">Total</td>
                 {players.map((player) => (
-                  <td key={player.id} className="border px-4 py-2 font-bold bg-indigo-500 text-white">
+                  <td key={player.id} 
+                  className={`m-1 max-w-fit py-2 text-l bg-blue-700 shadow-lg border border-3 border-black border-r-2 cursor-not-allowed
+                              ${!player.isActive ? "text-neutral-500" 
+                        :((calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 20)? "text-red-600"
+                        :((calculateTotalScore(player) >= initialPenalties.GAME_SCORE - 40)? "text-yellow-500"
+                        :"text-white"))}
+                      `}>
                     {calculateTotalScore(player)}
                   </td>
                 ))}
@@ -413,9 +406,9 @@ export default function RummyScoreboard() {
 
       {/* Score Entry Buttons */}
       <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Enter Scores for Round {round + 1}</h2>
         <div className="space-y-2">
-          {players.filter((p) => p.isActive).map((player) => (
+          {(!shufflePlayers)&&
+          players.filter((p) => p.isActive).map((player) => (
             <div key={player.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
               <button
                 hidden={round > 0}
@@ -432,7 +425,8 @@ export default function RummyScoreboard() {
                 <button onClick={() => addScore(player.id, "SHOW")} className="bg-green-400 px-3 py-1 rounded">Show</button>
               </div>
             </div>
-          ))}
+          ))
+          }
         </div>
 
         {/* Winner Message */}
