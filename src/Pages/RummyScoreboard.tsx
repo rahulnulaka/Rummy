@@ -189,19 +189,16 @@ export default function RummyScoreboard() {
   };
 
   const eliminatePlayerIfReachedScore = () => {
-    setPlayers((prev) => {
-      const updated = prev.map((p) => {
-        const total = calculateTotalScore(p);
-        return total >= initialPenalties.GAME_SCORE ? { ...p, isActive: false } : p;
-      });
-
-      const active = updated.filter((p) => p.isActive);
-      if (active.length === 1) {
-        setWinner(active[0].name);
+    let activePlayers:Player[] = [];
+    players.map((p)=>{
+      let total = calculateTotalScore(p);
+      console.log("total:" , total);
+      if(total >= initialPenalties.GAME_SCORE){
+        p.isActive = false;
       }
-
-      return updated;
-    });
+       activePlayers.push(p);
+    })
+    setPlayers(activePlayers);
   };
 
   const nextRound = () => {
@@ -211,7 +208,8 @@ export default function RummyScoreboard() {
     if (activePlayers.length === 0) return;
 
     let currentIndex = activePlayers.findIndex((p) => p.id === dealerId);
-    if (currentIndex === -1) currentIndex = 0;
+    console.log(currentIndex);
+    // if (currentIndex === -1) currentIndex = 0;
 
     const nextDealer = activePlayers[(currentIndex + 1) % activePlayers.length];
     setDealerId(nextDealer.id);
