@@ -177,18 +177,6 @@ export default function RummyScoreboard() {
   };
 
   const eliminatePlayerIfReachedScore = () => {
-<<<<<<< Updated upstream
-    let activePlayers:Player[] = [];
-    players.map((p)=>{
-      let total = calculateTotalScore(p);
-      console.log("total:" , total);
-      if(total >= initialPenalties.GAME_SCORE){
-        p.isActive = false;
-      }
-       activePlayers.push(p);
-    })
-    setPlayers(activePlayers);
-=======
     players.map((player)=>{
         const total = calculateTotalScore(player);
         if(total >= initialPenalties.GAME_SCORE) {
@@ -201,7 +189,6 @@ export default function RummyScoreboard() {
     if (active.length === 1) {
       setWinner(active[0].name);
     }
->>>>>>> Stashed changes
   };
 
   const nextRound = () => {
@@ -211,15 +198,10 @@ export default function RummyScoreboard() {
     if (activePlayers.length === 0) return;
 
     let currentIndex = activePlayers.findIndex((p) => p.id === dealerId);
-<<<<<<< Updated upstream
     console.log(currentIndex);
-    // if (currentIndex === -1) currentIndex = 0;
+    if (currentIndex === -1) currentIndex = 0;
 
     const nextDealer = activePlayers[(currentIndex + 1) % activePlayers.length];
-=======
-    if (currentIndex === -1) currentIndex = 0;
-    const nextDealer = activePlayers[(currentIndex + 1) % activePlayers.length]; 
->>>>>>> Stashed changes
     setDealerId(nextDealer.id);
     setRound((prev) => prev + 1);
   };
